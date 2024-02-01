@@ -1,4 +1,4 @@
-# TechShell
+# 🐚 TechShell
 
 TechShell is a simple C program (techshell.c) that functions as a basic shell, allowing users to enter commands. The program parses the command line, checks for I/O redirection (using `<` for input from a file, `>` for output to a file), and then executes the command in a forked child process utilizing an exec call.
 
