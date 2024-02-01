@@ -10,12 +10,12 @@ TechShell is a simple C program (techshell.c) that functions as a basic shell, a
 ## Usage:
 
 1. Clone down the repo
-  ```bash
-    git clone https://github.com/Joel-ajp/techshell
-  ```
-  ```bash
-  cd techshell
-  ```
+   ```bash
+   git clone https://github.com/Joel-ajp/techshell
+   ```
+   ```bash
+   cd techshell
+   ```
 
 2. Compile the program
    ```bash
