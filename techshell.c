@@ -15,7 +15,6 @@
 #include <fcntl.h>
 #include <errno.h>
 
-
 #define MAX_INPUT_SIZE 1024
 
 // Command struct 
@@ -39,18 +38,19 @@ char *HomeDirectory() {
 }
 //function that is supposed to handle cd command but I am having trouble getting it 
 //to change to subdirectories after going to the home directory
-int ChangeDirectory(struct ShellCommand command) {
+void ChangeDirectory(struct ShellCommand command) {
 	//If the argument is null Or if the argument is ~ cd to the home directory	
 	if(command.args[0] == NULL || strcmp(command.args[0], "~") == 0) {
 		char *homeD = HomeDirectory();
 		if(chdir(homeD) != 0) {
 			perror("chdir() error");
 		}
+	// Checks to see if there is only one argument
 	} else if (command.args[1] == NULL) {
-		// this is supposed to change to the specifed directory but it is not...
 		if(chdir(command.args[0]) != 0) {
 			perror("Error with chdir in the ChangeDirectory function");
 		}
+	// If is more than one argument, then returns this message
 	} else {
 		printf("techshell: cd: too many arguments\n");
 	}
