@@ -2,9 +2,8 @@
 * Name(s):Chase Dowdy, Joel Porter 
 * Date: 
 * Description: **Include what you were and were not able to handle!**
-*
-*
 */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -19,7 +18,7 @@
 
 #define MAX_INPUT_SIZE 1024
 
-//Functions to implement:
+// Command struct 
 struct ShellCommand{
 	char * command;
 	char *args[MAX_INPUT_SIZE / 2 + 1];
@@ -28,6 +27,7 @@ struct ShellCommand{
 	char *inputFile;
 	char *outputFile;
 };
+
 //Function to get the home directory
 char *HomeDirectory() {
 	//this is where getenv is supposed to be used to be able to get back to home
@@ -39,20 +39,23 @@ char *HomeDirectory() {
 }
 //function that is supposed to handle cd command but I am having trouble getting it 
 //to change to subdirectories after going to the home directory
-void ChangeDirectory(struct ShellCommand command) {
-	//if no arguemnt is given or ~ is used it goes home
-	if(command.args[1] == NULL || strcmp(command.args[1], "~") == 0) {
+int ChangeDirectory(struct ShellCommand command) {
+	//If the argument is null Or if the argument is ~ cd to the home directory	
+	if(command.args[0] == NULL || strcmp(command.args[0], "~") == 0) {
 		char *homeD = HomeDirectory();
 		if(chdir(homeD) != 0) {
 			perror("chdir() error");
 		}
-	}else {
+	} else if (command.args[1] == NULL) {
 		// this is supposed to change to the specifed directory but it is not...
-		if(chdir(command.args[1]) != 0) {
-			perror("chdir() error");
+		if(chdir(command.args[0]) != 0) {
+			perror("Error with chdir in the ChangeDirectory function");
 		}
+	} else {
+		printf("techshell: cd: too many arguments\n");
 	}
 }
+
 char* CommandPrompt(){ // Display current working directory and return user input
 	char cwd[MAX_INPUT_SIZE];
 	if(getcwd(cwd, sizeof(cwd)) != NULL){
@@ -64,7 +67,6 @@ char* CommandPrompt(){ // Display current working directory and return user inpu
 	if (fgets(input, MAX_INPUT_SIZE, stdin) == NULL) {
 		perror("fgets() error");
 		exit(EXIT_FAILURE);
-
 	}
 
 	//This removes the trailing newline characters
@@ -150,35 +152,34 @@ int main() {
 
     // repeatedly prompt the user for input
     for (;;) {
-        input = CommandPrompt();
-	if (strcmp(input, "exit") == 0){
+		input = CommandPrompt();
+		if (strcmp(input, "exit") == 0){
+			free(input);
+			break;
+		}
+
+		// parse the command line
+		command = ParseCommandLine(input);
+
+		// execute the command and checks for cd 
+		if (strcmp(command.command, "cd") == 0) {
+			ChangeDirectory(command);
+		} else {
+			ExecuteCommand(command);
+		}
+
+		//free the allocated memory
+		free(command.command);
+		for (int i =0; command.args[i] != NULL; i++) {
+			free(command.args[i]);
+		}
+		if(command.redirectInput) {
+			free(command.inputFile);
+		}
+		if(command.redirectOutput) {
+			free(command.outputFile);
+		}
 		free(input);
-		break;
-	}
-
-        // parse the command line
-	command = ParseCommandLine(input);
-        // execute the command and checks for cd 
-        if (strcmp(command.command, "cd") == 0) {
-		ChangeDirectory(command);
-	}else {
-		ExecuteCommand(command);
-	}
-
-	//free the allocated memory
-	free(command.command);
-	for (int i =0; command.args[i] != NULL; i++) {
-		free(command.args[i]);
-	}
-	if(command.redirectInput) {
-		free(command.inputFile);
-	}
-	if(command.redirectOutput) {
-		free(command.outputFile);
-	}
-	free(input);
-  
     }	
     exit(0);
-
 }
