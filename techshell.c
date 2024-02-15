@@ -86,25 +86,30 @@ struct ShellCommand ParseCommandLine(char *input){ // Process the user input (As
 	command.redirectOutput = 0;
 	command.inputFile = NULL;
 	command.outputFile = NULL;
+	command.args[0] = token;
 
 	while (token != NULL) {
-		token = strtok(NULL, " ");
 		if(token != NULL) {
 			if(strcmp(token, "<") == 0) {
 				command.redirectInput = 1;
 				token = strtok(NULL, " ");
 				command.inputFile = strdup(token);
-			}else if (strcmp(token, ">") == 0) {
+			} else if (strcmp(token, ">") == 0) {
 				command.redirectOutput = 1;
 				token = strtok(NULL, " ");
 				command.outputFile = strdup(token);
-			}else {
-				command.args[argc++] = strdup(token);
+			} else {
+				command.args[argc] = strdup(token);
+				argc++;
 			}
+		} else {
+			command.args[argc] = NULL;
+			return command;
 		}
+		token = strtok(NULL, " ");
 	}
-	command.args[argc] = NULL;
 
+	command.args[argc] = NULL;
 	return command;
 }
 
@@ -115,31 +120,29 @@ void ExecuteCommand(struct ShellCommand command){ //Execute a shell command
 		perror("fork() error");
 		exit(EXIT_FAILURE);
 	}
+
 	if(pid == 0) {//This is the child process 
 		//Redirect the input if it is needed
 		if(command.redirectInput) {
 			int input_fd = open(command.inputFile, O_RDONLY);
-			if(input_fd == -1) {
-				perror("open() error");
-				exit(EXIT_FAILURE);
-			}
-			dup2(input_fd, STDIN_FILENO);
-			close(input_fd);
+			FILE* infile = fopen(command.inputFile, "r");
+			dup2(fileno(infile), 0);
+			fclose(infile);
+			close(pid);
 		}
 
 		//Redirect the output if it is needed
 		if(command.redirectOutput) {
 			int output_fd = open(command.outputFile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-			if(output_fd == -1) {
-				perror("open() error");
-				exit(EXIT_FAILURE);
-			}
-			dup2(output_fd, STDOUT_FILENO);
-			close(output_fd);
+			FILE* outfile = fopen(command.outputFile, "w");
+			dup2(fileno(outfile), 1);
+			fclose(outfile);
+			close(pid);
 		}
 
 		//excute the given command with its args. 
 		execvp(command.command, command.args);
+		close(pid);
 		perror("execvp() error");
 		exit(EXIT_FAILURE);
 	} else {// This is the parent process
@@ -147,11 +150,10 @@ void ExecuteCommand(struct ShellCommand command){ //Execute a shell command
 	}
 }
 int main() {
-    char* input;
-    struct ShellCommand command;
-
     // repeatedly prompt the user for input
     for (;;) {
+		char* input;
+		struct ShellCommand command;
 		input = CommandPrompt();
 		if (strcmp(input, "exit") == 0){
 			free(input);
