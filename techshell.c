@@ -37,6 +37,7 @@ char *HomeDirectory() {
 	return homeD;
 
 }
+
 // Function to handle directory changes
 void ChangeDirectory(struct ShellCommand command) {
 	//If the argument is null Or if the argument is ~ change directory to user home
@@ -127,9 +128,10 @@ void ExecuteCommand(struct ShellCommand command){ //Execute a shell command
 		exit(EXIT_FAILURE);
 	}
 
-	if(pid == 0) {//This is the child process 
+	// Checks to see if we entered a child process
+	if(pid == 0) {
 
-		//Redirect the input if it is needed
+		//Redirect the input if it is needed (<)
 		if(command.redirectInput) {
 			FILE* infile = fopen(command.inputFile, "r");
 			if (infile == NULL) {
@@ -138,12 +140,18 @@ void ExecuteCommand(struct ShellCommand command){ //Execute a shell command
 				return;
 			}
 			printf("HIT THIS");
-			dup2(fileno(infile), 0);
+			int status_code = dup2(fileno(infile), 0);
+			if (status_code == -1) {
+				printf("techshell: %s: error opening file\n", command.outputFile);
+				close(pid);
+				return;
+			}
+			// TODO read the contents of the file and passing them as an argument to command.command
 			fclose(infile);
 			close(pid);
 		}
 
-		//Redirect the output if it is needed
+		//Redirect the output if it is needed (>)
 		if(command.redirectOutput) {
 			FILE* outfile = fopen(command.outputFile, "w");
 			if (outfile == NULL) {
@@ -151,7 +159,12 @@ void ExecuteCommand(struct ShellCommand command){ //Execute a shell command
 				close(pid);
 				return;
 			}
-			dup2(fileno(outfile), 1);
+			int status_code = dup2(fileno(outfile), 1);
+			if (status_code == -1) {
+				printf("techshell: %s: error opening file\n", command.outputFile);
+				close(pid);
+				return;
+			}
 			fclose(outfile);
 			close(pid);
 		}
@@ -185,7 +198,7 @@ int main() {
 		// parse the command line
 		command = ParseCommandLine(input);
 
-		// execute the command and checks for cd 
+		// Checks for cd, then executes the command
 		if (strcmp(command.command, "cd") == 0) {
 			ChangeDirectory(command);
 		} else {
@@ -194,7 +207,7 @@ int main() {
 
 		//free the allocated memory
 		free(command.command);
-		for (int i =0; command.args[i] != NULL; i++) {
+		for (int i = 0; command.args[i] != NULL; i++) {
 			free(command.args[i]);
 		}
 		if(command.redirectInput) {
