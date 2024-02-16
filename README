@@ -1,0 +1,6 @@
+Names: Chase Dowdy and Joel Porter
+
+Inner Workings of The Program:
+    We decided to use a struct as our command interface. This struct houses the command and arguments, as well as the bool values for specific types of commands (IO output and input).
+    
+    

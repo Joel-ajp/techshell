@@ -1,5 +1,5 @@
 /*
-* Name(s):Chase Dowdy, Joel Porter 
+* Name(s): Chase Dowdy, Joel Porter 
 * Date: 
 * Description: **Include what you were and were not able to handle!**
 */
@@ -29,25 +29,25 @@ struct ShellCommand{
 
 //Function to get the home directory
 char *HomeDirectory() {
-	//this is where getenv is supposed to be used to be able to get back to home
+	// Grabs the home env variable
 	char *homeD = getenv("HOME");
 	if(homeD == NULL) {
 		perror("getenc() error");
 	}
 	return homeD;
+
 }
-//function that is supposed to handle cd command but I am having trouble getting it 
-//to change to subdirectories after going to the home directory
+// Function to handle directory changes
 void ChangeDirectory(struct ShellCommand command) {
-	//If the argument is null Or if the argument is ~ cd to the home directory	
-	if(command.args[0] == NULL || strcmp(command.args[0], "~") == 0) {
+	//If the argument is null Or if the argument is ~ change directory to user home
+	if(command.args[1] == NULL || strcmp(command.args[1], "~") == 0) {
 		char *homeD = HomeDirectory();
 		if(chdir(homeD) != 0) {
 			perror("chdir() error");
 		}
 	// Checks to see if there is only one argument
-	} else if (command.args[1] == NULL) {
-		if(chdir(command.args[0]) != 0) {
+	} else if (command.args[2] == NULL) {
+		if(chdir(command.args[1]) != 0) {
 			perror("Error with chdir in the ChangeDirectory function");
 		}
 	// If is more than one argument, then returns this message
@@ -56,7 +56,8 @@ void ChangeDirectory(struct ShellCommand command) {
 	}
 }
 
-char* CommandPrompt(){ // Display current working directory and return user input
+// Display current working directory and return user input
+char* CommandPrompt(){ 
 	char cwd[MAX_INPUT_SIZE];
 	if(getcwd(cwd, sizeof(cwd)) != NULL){
 		printf("%s$ ", cwd);
@@ -69,17 +70,18 @@ char* CommandPrompt(){ // Display current working directory and return user inpu
 		exit(EXIT_FAILURE);
 	}
 
-	//This removes the trailing newline characters
+	// Removes trailling new line character
 	input[strcspn(input, "\n")] = '\0';
 	
 	return input;
 }
 
-struct ShellCommand ParseCommandLine(char *input){ // Process the user input (As a shell command)
+// Process the user input (Formatting into the ShellCommand struct)
+struct ShellCommand ParseCommandLine(char *input){ 
 	struct ShellCommand command;
 	char *token = strtok(input, " ");
-	command.command = strdup(token);
 	int argc = 0;
+	command.command = strdup(token);
 
 	//Initialize redirection flags and file names
 	command.redirectInput = 0;
@@ -90,13 +92,16 @@ struct ShellCommand ParseCommandLine(char *input){ // Process the user input (As
 
 	while (token != NULL) {
 		if(token != NULL) {
+
 			if(strcmp(token, "<") == 0) {
 				command.redirectInput = 1;
 				token = strtok(NULL, " ");
+				if (token == NULL) { break; }
 				command.inputFile = strdup(token);
 			} else if (strcmp(token, ">") == 0) {
 				command.redirectOutput = 1;
 				token = strtok(NULL, " ");
+				if (token == NULL) { break; }
 				command.outputFile = strdup(token);
 			} else {
 				command.args[argc] = strdup(token);
@@ -106,6 +111,7 @@ struct ShellCommand ParseCommandLine(char *input){ // Process the user input (As
 			command.args[argc] = NULL;
 			return command;
 		}
+
 		token = strtok(NULL, " ");
 	}
 
@@ -122,10 +128,16 @@ void ExecuteCommand(struct ShellCommand command){ //Execute a shell command
 	}
 
 	if(pid == 0) {//This is the child process 
+
 		//Redirect the input if it is needed
 		if(command.redirectInput) {
-			int input_fd = open(command.inputFile, O_RDONLY);
 			FILE* infile = fopen(command.inputFile, "r");
+			if (infile == NULL) {
+				printf("techshell: %s: no such file or directory\n", command.inputFile);
+				close(pid);
+				return;
+			}
+			printf("HIT THIS");
 			dup2(fileno(infile), 0);
 			fclose(infile);
 			close(pid);
@@ -133,8 +145,12 @@ void ExecuteCommand(struct ShellCommand command){ //Execute a shell command
 
 		//Redirect the output if it is needed
 		if(command.redirectOutput) {
-			int output_fd = open(command.outputFile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 			FILE* outfile = fopen(command.outputFile, "w");
+			if (outfile == NULL) {
+				printf("techshell: %s: no such file or directory\n", command.outputFile);
+				close(pid);
+				return;
+			}
 			dup2(fileno(outfile), 1);
 			fclose(outfile);
 			close(pid);
@@ -151,11 +167,17 @@ void ExecuteCommand(struct ShellCommand command){ //Execute a shell command
 }
 int main() {
     // repeatedly prompt the user for input
-    for (;;) {
+	for (;;) {
 		char* input;
 		struct ShellCommand command;
 		input = CommandPrompt();
-		if (strcmp(input, "exit") == 0){
+
+		// Checks to see if the input is empty, if so frees the memory and moves to the next interation of the loop
+		if (*input == '\0') {
+			free(input);
+			continue;
+		}
+		else if (strcmp(input, "exit") == 0){
 			free(input);
 			break;
 		}
