@@ -147,8 +147,6 @@ void ExecuteCommand(struct ShellCommand command){ //Execute a shell command
 				return;
 			}
 			// TODO read the contents of the file and passing them as an argument to command.command
-			fclose(infile);
-			close(pid);
 		}
 
 		//Redirect the output if it is needed (>)
@@ -165,8 +163,6 @@ void ExecuteCommand(struct ShellCommand command){ //Execute a shell command
 				close(pid);
 				return;
 			}
-			fclose(outfile);
-			close(pid);
 		}
 
 		//excute the given command with its args. 
