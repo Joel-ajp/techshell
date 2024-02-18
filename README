@@ -1,6 +1,11 @@
 Names: Chase Dowdy and Joel Porter
 
 Inner Workings of The Program:
-    We decided to use a struct as our command interface. This struct houses the command and arguments, as well as the bool values for specific types of commands (IO output and input).
+We decided to use a struct as our command interface. This struct houses the main command and its arguments (as an array of strings), as well as the boolean values for specific types of commands (output and input redirects).
+The main loop of the program gets input from the user via the "CommandPrompt" function. The input is then parsed into a command struct. 
+There is a catch all function "ExecuteCommand" that the command struct is passed into if the main command is not "cd". If the user is attempting to change directory the command is handled by the "ChangeDirectory" function. 
+The ExecuteCommand function checks to see if there are any redirects in the command and opens the input or output file as needed. 
+After the command has executed the memory is cleared and the main loop continues.
     
-    
+Functionality Implementations:
+We ran the program through alot of tests to try to find any edge cases. We completed the program according to the rubric; and, we hope we didn't miss anything!
